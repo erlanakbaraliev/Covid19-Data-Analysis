@@ -253,44 +253,6 @@ GROUP BY location, population, life_expectancy
 HAVING location IN ('Asia', 'Africa', 'Europe', 'North America', 'South America', 'Oceania')
 ORDER BY total_infected DESC;
 
--- Data per continent using CTE
-
-WITH countries AS (
-	SELECT 
-		continent,
-		location, 
-		COALESCE(SUM(new_cases), 0) AS "total_infected",
-		COALESCE(SUM(new_deaths), 0) AS "total_deaths",
-		COALESCE(SUM(new_vaccinations), 0) AS "total_vaccinations",
-		ROUND((COALESCE(SUM(new_cases), 0) / population) * 100, 2) AS "infection_percentage",
-		ROUND((COALESCE(SUM(new_deaths), 0) / population) * 100, 4) AS "death_percentage",
-		ROUND((COALESCE(SUM(new_vaccinations), 0) / population) * 100, 2) AS "vaccination_percentage",
-		CASE
-			WHEN COALESCE(SUM(new_cases), 0)=0 THEN NULL
-			ELSE ROUND((COALESCE(SUM(new_deaths), 0) / COALESCE(SUM(new_cases), 0))*100, 2)
-		END AS "death_percentage_total_infected",
-		population,
-		life_expectancy
-	FROM covid19
-	GROUP BY location, population, life_expectancy, continent
-	HAVING continent IS NOT NULL
-	ORDER BY location
-)
-SELECT 
-	continent,
-	SUM(total_infected) AS "total_infected",
-	SUM(total_deaths) AS "total_deaths",
-	SUM(total_vaccinations) AS "total_vaccinations",
-	SUM(population) AS "total_population",
-	ROUND(AVG(infection_percentage), 2) AS "infection_percentage",
-	ROUND(AVG(death_percentage), 2) AS "death_percentage",
-	ROUND(AVG(vaccination_percentage), 2) AS "vaccination_percentage",
-	ROUND(AVG(life_expectancy)::numeric, 2) AS "life_expectancy"
-FROM countries
-GROUP BY continent
-ORDER BY total_infected DESC;
-
-
 -- 
 SELECT 
 	location, 
@@ -330,3 +292,39 @@ FROM covid19
 GROUP BY location, population, life_expectancy, continent
 HAVING continent IS NULL AND location='World'
 ORDER BY life_expectancy DESC;
+
+-- Data per continent using CTE
+WITH countries AS (
+	SELECT 
+		continent,
+		location, 
+		COALESCE(SUM(new_cases), 0) AS "total_infected",
+		COALESCE(SUM(new_deaths), 0) AS "total_deaths",
+		COALESCE(SUM(new_vaccinations), 0) AS "total_vaccinations",
+		ROUND((COALESCE(SUM(new_cases), 0) / population) * 100, 2) AS "infection_percentage",
+		ROUND((COALESCE(SUM(new_deaths), 0) / population) * 100, 4) AS "death_percentage",
+		ROUND((COALESCE(SUM(new_vaccinations), 0) / population) * 100, 2) AS "vaccination_percentage",
+		CASE
+			WHEN COALESCE(SUM(new_cases), 0)=0 THEN NULL
+			ELSE ROUND((COALESCE(SUM(new_deaths), 0) / COALESCE(SUM(new_cases), 0))*100, 2)
+		END AS "death_percentage_total_infected",
+		population,
+		life_expectancy
+	FROM covid19
+	GROUP BY location, population, life_expectancy, continent
+	HAVING continent IS NOT NULL
+	ORDER BY location
+)
+SELECT 
+	continent,
+	SUM(total_infected) AS "total_infected",
+	SUM(total_deaths) AS "total_deaths",
+	SUM(total_vaccinations) AS "total_vaccinations",
+	SUM(population) AS "total_population",
+	ROUND(AVG(infection_percentage), 2) AS "infection_percentage",
+	ROUND(AVG(death_percentage), 2) AS "death_percentage",
+	ROUND(AVG(vaccination_percentage), 2) AS "vaccination_percentage",
+	ROUND(AVG(life_expectancy)::numeric, 2) AS "life_expectancy"
+FROM countries
+GROUP BY continent
+ORDER BY total_infected DESC;
